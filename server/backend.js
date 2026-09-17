@@ -276,7 +276,7 @@ app.post("/classify-real", async (req, res) => {
     }
 
     try {
-        const comments = await getAllComments(videoId, 5);
+        const comments = await getAllComments(videoId, 50);
 
         if (!comments.length) {
             return res.json({
@@ -325,6 +325,10 @@ app.post("/classify-real", async (req, res) => {
         return res.status(500).json({ error: "Real classification failed" });
     }
 });
+app.get("/", (req, res) => {
+    res.send("Server is running");
+});
+
 
 app.listen(process.env.PORT || 5000, () => {
     console.log(`Server running on port ${process.env.PORT || 5000}`);
