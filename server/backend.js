@@ -288,10 +288,24 @@ app.post("/classify-real", async (req, res) => {
 
         const realSection = createSectionSummary();
         const realComments = [];
+        const batchSize = 10;
 
-        for (const comment of comments) {
-            try {
-                const label = await realClassify(comment);
+        for (let i = 0; i < comments.length; i += batchSize) {
+            const batch = comments.slice(i, i + batchSize);
+
+            const results = await Promise.all(
+                batch.map(async (comment) => {
+                    try {
+                        return await realClassify(comment);
+                    } catch (err) {
+                        console.log("HF classify error:", err.message);
+                        return "neutral";
+                    }
+                })
+            );
+
+            batch.forEach((comment, index) => {
+                const label = results[index];
 
                 realComments.push({
                     text: comment,
@@ -301,18 +315,7 @@ app.post("/classify-real", async (req, res) => {
                 if (realSection[label] !== undefined) {
                     realSection[label]++;
                 }
-
-                await sleep(500);
-            } catch (err) {
-                console.log("HF classify error:", err.message);
-
-                realComments.push({
-                    text: comment,
-                    label: "neutral"
-                });
-
-                realSection.neutral++;
-            }
+            });
         }
 
         return res.json({
